@@ -1,0 +1,44 @@
+<mxfile host="app.diagrams.net" modified="2023-08-02T16:33:13.258Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="l69ut8pl_M2oyvQBu8fB" version="21.6.6" type="device">
+  <diagram name="Page-1" id="ng5YRKwTEC4iBnElybK8">
+    <mxGraphModel dx="1156" dy="763" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-5" value="Get Balance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GZrrnMQ7KSY_glPMckIn-1" target="GZrrnMQ7KSY_glPMckIn-4">
+          <mxGeometry x="0.5902" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="695" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-7" value="Add Money" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="GZrrnMQ7KSY_glPMckIn-1" target="GZrrnMQ7KSY_glPMckIn-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-9" value="Withdraw Money / update balance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="GZrrnMQ7KSY_glPMckIn-1" target="GZrrnMQ7KSY_glPMckIn-4">
+          <mxGeometry x="0.5548" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-1" value="Wallet API" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="160" y="255" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-4" value="Wallet Balance (Redis)" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="494" y="640" width="80" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="GZrrnMQ7KSY_glPMckIn-6" target="GZrrnMQ7KSY_glPMckIn-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-6" value="Credit Operations (Kafka)" style="outlineConnect=0;dashed=0;verticalLabelPosition=top;verticalAlign=bottom;align=center;html=1;shape=mxgraph.aws3.topic_2;fillColor=#D9A741;gradientColor=none;labelPosition=center;" vertex="1" parent="1">
+          <mxGeometry x="494" y="240" width="80" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-14" value="Add credit&lt;br&gt;Update balance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="GZrrnMQ7KSY_glPMckIn-12" target="GZrrnMQ7KSY_glPMckIn-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GZrrnMQ7KSY_glPMckIn-12" value="Credit Processor&lt;br&gt;Service" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="474" y="450" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
