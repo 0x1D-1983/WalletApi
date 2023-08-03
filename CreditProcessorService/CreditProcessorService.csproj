@@ -7,7 +7,9 @@
     <UserSecretsId>dotnet-CreditWalletService-493aebb8-9879-4da1-ad0d-f62c7c6db821</UserSecretsId>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(RunConfiguration)' == 'CreditWalletService' " />
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'CreditWalletService' ">
+    <ExternalConsole>true</ExternalConsole>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.2.0" />
     <PackageReference Include="Confluent.SchemaRegistry" Version="2.2.0" />

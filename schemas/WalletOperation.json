@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "additionalProperties": false,
+    "definitions": {
+      "OperationType": {
+        "description": "",
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "x-enumNames": [
+          "Balance",
+          "Credit",
+          "Debit"
+        ]
+      }
+    },
+    "properties": {
+      "Amount": {
+        "format": "decimal",
+        "type": "number"
+      },
+      "OperationType": {
+        "$ref": "#/definitions/OperationType"
+      }
+    },
+    "title": "WalletOperation",
+    "type": "object"
+  }

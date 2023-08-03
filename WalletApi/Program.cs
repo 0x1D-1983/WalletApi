@@ -11,7 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IWalletService, WalletService>();
-builder.Services.AddSingleton<IRedisService>(sp => new RedisService(builder.Configuration["Redis:Host"]));
+builder.Services.AddSingleton<IRedisService>(sp =>
+    new RedisService(builder.Configuration["Redis:Host"] ??
+    throw new ArgumentNullException("Redis host is missing.")));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

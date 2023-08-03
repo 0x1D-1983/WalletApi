@@ -42,7 +42,9 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, ser
     });
 
     // redis
-    services.AddSingleton<IRedisService>(sp => new RedisService(hostContext.Configuration["Redis:Host"]));
+    services.AddSingleton<IRedisService>(sp =>
+        new RedisService(hostContext.Configuration["Redis:Host"] ??
+        throw new ArgumentNullException("Redis host is missing.")));
 
     services.AddHostedService<CreditWalletWorker>();
 }).Build();
