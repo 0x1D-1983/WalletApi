@@ -56,10 +56,20 @@ public class WalletService : IWalletService
             DecimalValue debit = new DecimalValue(amount);
             BalanceDetailsModel balance = await redisService.GetWalletBalance();
 
+            if (debit.Units > balance.Pounds) throw new InvalidOperationException("Not enough money in wallet.");
+
             var balanceCoinsQtys = balance.ToQuantityDictionary();
 
             var debitCoins = CoinsHelper.GetCoinsThatAddUpAmount(
                 balanceCoinsQtys.Keys.ToList(), balanceCoinsQtys.Values.ToList(), debit.Nanos);
+
+            // if nanos is present in amount and if no coins available to fulfill it then round up to nearest pound
+            if (debit.Nanos > 0 && debitCoins.Count == 0 && balance.Pounds >= debit.Units + 1)
+            {
+                amount = debit.Units + 1;
+                debit = new DecimalValue(amount);
+            }
+
             var debitCoinsQty = CoinsHelper.CoinListToQuantityDictionary(debitCoins);
             var newBalanceCoinsQtys = CoinsHelper.SubtractCoinQuantities(balanceCoinsQtys, debitCoinsQty);
 

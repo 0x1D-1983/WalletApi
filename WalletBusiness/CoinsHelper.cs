@@ -60,7 +60,7 @@ public static class CoinsHelper
             k++;
         }
 
-        return result.Dequeue();
+        return result.Count > 0 ? result.Dequeue() : new List<int>();
     }
 
     /// <summary>
@@ -69,8 +69,7 @@ public static class CoinsHelper
     /// <param name="coins"></param>
     /// <param name="amount"></param>
     /// <returns></returns>
-    public static List<int> GetCoinsThatAddUpAmountInf(
-        List<int> coins, int amount)
+    public static List<int> GetCoinsThatAddUpAmountInf(List<int> coins, int amount)
     {
         var result = new PriorityQueue<List<int>, int>();
         var partial = new List<int>();
@@ -107,7 +106,7 @@ public static class CoinsHelper
             k++;
         }
 
-        return result.Dequeue();
+        return result.Count > 0 ? result.Dequeue() : new List<int>();
     }
 
     public static Dictionary<int, int> AddCoinQuantities(Dictionary<int, int> set1, Dictionary<int, int> set2)

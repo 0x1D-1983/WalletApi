@@ -144,6 +144,40 @@ namespace WalletBusiness.Tests
                     FiftyPence = 0
                 }
             };
+            yield return new object[]
+            {
+                40.20m,
+                new BalanceDetailsModel
+                {
+                    Pounds = 100,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 10,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                },
+                new BalanceDetailsModel
+                {
+                    Pounds = 60,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 6,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                },
+                new BalanceDetailsModel
+                {
+                    Pounds = 40,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence =4,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                }
+            };
         }
 
         public static IEnumerable<object[]> MembersData_for_Credit()
@@ -173,6 +207,110 @@ namespace WalletBusiness.Tests
                 {
                     Key = "1",
                     Value = new WalletOperation(OperationType.Credit, 0.01m)
+                }
+            };
+        }
+
+        public static IEnumerable<object[]> MembersData_for_Debit_Coins_Unavailable()
+        {
+            yield return new object[]
+            {
+                50.05m,
+                new BalanceDetailsModel
+                {
+                    Pounds = 100,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 0,
+                    TenPence = 1,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                },
+                new BalanceDetailsModel
+                {
+                    Pounds = 49,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 0,
+                    TenPence = 1,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                },
+                new BalanceDetailsModel
+                {
+                    Pounds = 51,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 0,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                }
+            };
+            yield return new object[]
+            {
+                46.20m,
+                new BalanceDetailsModel
+                {
+                    Pounds = 100,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 2,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                },
+                new BalanceDetailsModel
+                {
+                    Pounds = 53,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 2,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                },
+                new BalanceDetailsModel
+                {
+                    Pounds = 47,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 0,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                }
+            };
+        }
+
+        public static IEnumerable<object[]> MembersData_for_Debit_Pounds_Unavailable()
+        {
+            yield return new object[]
+            {
+                10.05m,
+                new BalanceDetailsModel
+                {
+                    Pounds = 0,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 0,
+                    TenPence = 1,
+                    TwentyPence = 0,
+                    FiftyPence = 0
+                }
+            };
+            yield return new object[]
+            {
+                10.20m,
+                new BalanceDetailsModel
+                {
+                    Pounds = 0,
+                    OnePenny = 0,
+                    TwoPence = 0,
+                    FivePence = 10,
+                    TenPence = 0,
+                    TwentyPence = 0,
+                    FiftyPence = 0
                 }
             };
         }
@@ -229,6 +367,29 @@ namespace WalletBusiness.Tests
             var result = await sut.WithdrawMoney(amount);
             Assert.Equal(withdrawn, result);
             redis.Verify(s => s.SetWalletBalance(newBalance), Times.Exactly(1));
+        }
+
+        [Theory]
+        [MemberData(nameof(MembersData_for_Debit_Coins_Unavailable))]
+        public async void Withdrawal_rounds_up_to_nearest_available_amount_when_coins_unavailable(
+            decimal amount, BalanceDetailsModel initialBalance,
+            BalanceDetailsModel newBalance, BalanceDetailsModel withdrawn)
+        {
+            redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(initialBalance);
+
+            var result = await sut.WithdrawMoney(amount);
+            Assert.Equal(withdrawn, result);
+            redis.Verify(s => s.SetWalletBalance(newBalance), Times.Exactly(1));
+        }
+
+        [Theory]
+        [MemberData(nameof(MembersData_for_Debit_Pounds_Unavailable))]
+        public async void Withdrawal_throws_exception_when_pounds_unavailable(
+            decimal amount, BalanceDetailsModel initialBalance)
+        {
+            redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(initialBalance);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.WithdrawMoney(amount));
         }
     }
 }
