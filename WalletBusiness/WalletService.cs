@@ -1,35 +1,30 @@
 ﻿using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
-using StackExchange.Redis;
+using RedLockNet;
 using WalletDomain;
 
 namespace WalletBusiness;
 
-public class WalletService : IWalletService, IDisposable
+public class WalletService : IWalletService
 {
     private readonly ILogger<WalletService> logger;
     private IProducer<String, WalletOperation> producer;
-    private IRedisService redisService;
-    private string topic = "WalletOperations";
+    private readonly IRedisService redisService;
+    private readonly IDistributedLockFactory redLockFactory;
 
-    private readonly RedLockFactory redlockFactory;
+    private const string topic = "WalletOperations";
     private const string WALLET = "wallet";
 
     public WalletService(
         ILogger<WalletService> logger,
         IProducer<String, WalletOperation> producer,
-        IRedisService redisService)
+        IRedisService redisService,
+        IDistributedLockFactory redLockFactory)
     {
         this.logger = logger;
         this.producer = producer;
         this.redisService = redisService;
-
-        var redisConnMultiplex = ConnectionMultiplexer.Connect("localhost:6379");
-
-        var multiplexers = new List<RedLockMultiplexer> { redisConnMultiplex };
-        redlockFactory = RedLockFactory.Create(multiplexers);
+        this.redLockFactory = redLockFactory;
     }
 
     public async Task<bool> AddMoney(decimal amount)
@@ -56,7 +51,7 @@ public class WalletService : IWalletService, IDisposable
     public async Task<BalanceDetailsModel> WithdrawMoney(decimal amount)
     {
         var expiry = TimeSpan.FromSeconds(30);
-        await using (var redLock = await redlockFactory.CreateLockAsync(WALLET, expiry))
+        await using (var redLock = await redLockFactory.CreateLockAsync(WALLET, expiry))
         {
             DecimalValue debit = new DecimalValue(amount);
             BalanceDetailsModel balance = await redisService.GetWalletBalance();
@@ -78,11 +73,5 @@ public class WalletService : IWalletService, IDisposable
     public async Task<BalanceDetailsModel> GetBalance()
     {
         return await redisService.GetWalletBalance();
-    }
-
-    public void Dispose()
-    {
-        producer.Dispose();
-        redlockFactory.Dispose();
     }
 }

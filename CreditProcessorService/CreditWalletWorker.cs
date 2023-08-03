@@ -1,7 +1,5 @@
 ﻿using Confluent.Kafka;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
-using StackExchange.Redis;
+using RedLockNet;
 using WalletBusiness;
 using WalletDomain;
 
@@ -11,25 +9,22 @@ public class CreditWalletWorker : BackgroundService
 
     private readonly ILogger<CreditWalletWorker> logger;
     private readonly IConsumer<String, WalletOperation> consumer;
-    private IRedisService redisService;
+    private readonly IRedisService redisService;
+    private readonly IDistributedLockFactory redLockFactory;
 
-    private readonly RedLockFactory redlockFactory;
     private const string WALLET = "wallet";
 
     public CreditWalletWorker(
         ILogger<CreditWalletWorker> logger,
         IConsumer<String, WalletOperation> consumer,
-        IRedisService redisService
+        IRedisService redisService,
+        IDistributedLockFactory redLockFactory
         )
     {
         this.logger = logger;
         this.consumer = consumer;
         this.redisService = redisService;
-        
-        var redisConnMultiplex = ConnectionMultiplexer.Connect("localhost:6379");
-
-        var multiplexers = new List<RedLockMultiplexer> { redisConnMultiplex };
-        redlockFactory = RedLockFactory.Create(multiplexers);
+        this.redLockFactory = redLockFactory;
     }
 
     protected virtual async Task HandleMessage(decimal amount, CancellationToken token)
@@ -38,7 +33,7 @@ public class CreditWalletWorker : BackgroundService
         {
             var expiry = TimeSpan.FromSeconds(30);
 
-            await using (var redLock = await redlockFactory.CreateLockAsync(WALLET, expiry))
+            await using (var redLock = await redLockFactory.CreateLockAsync(WALLET, expiry))
             {
                 if (redLock.IsAcquired)
                 {
@@ -82,7 +77,6 @@ public class CreditWalletWorker : BackgroundService
     public override void Dispose()
     {
         consumer.Dispose();
-        redlockFactory.Dispose();
         base.Dispose();
     }
 }

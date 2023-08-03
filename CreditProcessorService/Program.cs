@@ -3,6 +3,10 @@ using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Microsoft.Extensions.Options;
+using RedLockNet;
+using RedLockNet.SERedis;
+using RedLockNet.SERedis.Configuration;
+using StackExchange.Redis;
 using WalletBusiness;
 using WalletDomain;
 
@@ -45,6 +49,15 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, ser
     services.AddSingleton<IRedisService>(sp =>
         new RedisService(hostContext.Configuration["Redis:Host"] ??
         throw new ArgumentNullException("Redis host is missing.")));
+
+    // redlock
+    services.AddSingleton<IDistributedLockFactory>(sp =>
+        {
+            var redisConnMultiplex = ConnectionMultiplexer.Connect(hostContext.Configuration["Redis:Host"] ??
+                throw new ArgumentNullException("Redis host is missing."));
+            var multiplexers = new List<RedLockMultiplexer> { redisConnMultiplex };
+            return RedLockFactory.Create(multiplexers);
+        });
 
     services.AddHostedService<CreditWalletWorker>();
 }).Build();

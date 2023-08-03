@@ -2,7 +2,7 @@
 
 namespace WalletDomain;
 
-public class BalanceDetailsModel
+public record BalanceDetailsModel
 {
     [JsonInclude]
     public decimal Total { get; set;}
