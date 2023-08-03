@@ -28,12 +28,12 @@ public class RedisService : IRedisService
         {
 #pragma warning disable
             return JsonSerializer.Deserialize<BalanceDetailsModel>(redisValue) ??
-                new BalanceDetailsModel(0, 0, CoinsHelper.InitQuantityDictionary());
+                new BalanceDetailsModel(0, CoinsHelper.InitQuantityDictionary());
 #pragma warning restore
         }
         else
         {
-            return new BalanceDetailsModel(0, 0, CoinsHelper.InitQuantityDictionary());
+            return new BalanceDetailsModel(0, CoinsHelper.InitQuantityDictionary());
         }
     }
 }

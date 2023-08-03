@@ -63,10 +63,9 @@ public class WalletService : IWalletService
             var debitCoinsQty = CoinsHelper.CoinListToQuantityDictionary(debitCoins);
             var newBalanceCoinsQtys = CoinsHelper.SubtractCoinQuantities(balanceCoinsQtys, debitCoinsQty);
 
-            await redisService.SetWalletBalance(new BalanceDetailsModel(
-                balance.Total - amount, balance.Pounds - debit.Units, newBalanceCoinsQtys));
+            await redisService.SetWalletBalance(new BalanceDetailsModel(balance.Pounds - debit.Units, newBalanceCoinsQtys));
 
-            return new BalanceDetailsModel(amount, debit.Units, debitCoinsQty);
+            return new BalanceDetailsModel(debit.Units, debitCoinsQty);
         }
     }
 

@@ -5,9 +5,6 @@ namespace WalletDomain;
 public record BalanceDetailsModel
 {
     [JsonInclude]
-    public decimal Total { get; set;}
-
-    [JsonInclude]
     public int Pounds { get; set;}
 
     [JsonInclude]
@@ -32,9 +29,8 @@ public record BalanceDetailsModel
     {
     }
 
-    public BalanceDetailsModel(decimal value, int pounds, Dictionary<int, int> coins)
+    public BalanceDetailsModel(int pounds, Dictionary<int, int> coins)
     {
-        Total = value;
         Pounds = pounds;
         foreach (var kvp in coins.Where(_ => _.Value > 0))
         {

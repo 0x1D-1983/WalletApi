@@ -40,17 +40,11 @@ public class CreditWalletWorker : BackgroundService
                     DecimalValue credit = new DecimalValue(amount);
                     BalanceDetailsModel balance = await redisService.GetWalletBalance();
 
-                    int pounds = balance.Pounds;
-                    decimal total = balance.Total;
-
-                    total += amount;
-                    pounds += credit.Units;
-
                     var creditCoins = CoinsHelper.GetCoinsThatAddUpAmountInf(CoinsHelper.Denominations, credit.Nanos);
                     var creditCoinsQty = CoinsHelper.CoinListToQuantityDictionary(creditCoins);
                     var newCoinsQtys = CoinsHelper.AddCoinQuantities(balance.ToQuantityDictionary(), creditCoinsQty);
 
-                    await redisService.SetWalletBalance(new BalanceDetailsModel(total, pounds, newCoinsQtys));
+                    await redisService.SetWalletBalance(new BalanceDetailsModel(balance.Pounds + credit.Units, newCoinsQtys));
                 }
             }
         }

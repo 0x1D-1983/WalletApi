@@ -31,13 +31,12 @@ namespace WalletBusiness.Tests
             sut = new WalletService(logger.Object, producer.Object, redis.Object, redLockFactory.Object);
         }
 
-        public static IEnumerable<object[]> Data_for_Balance_is_returned()
+        public static IEnumerable<object[]> MembersData_for_Balance()
         {
             yield return new object[]
             {
                 new BalanceDetailsModel
                 {
-                    Total = 0m,
                     Pounds = 0,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -51,7 +50,6 @@ namespace WalletBusiness.Tests
             {
                 new BalanceDetailsModel
                 {
-                    Total = 10.30m,
                     Pounds = 10,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -65,7 +63,6 @@ namespace WalletBusiness.Tests
             {
                 new BalanceDetailsModel
                 {
-                    Total = 1.23m,
                     Pounds = 1,
                     OnePenny = 1,
                     TwoPence = 1,
@@ -77,13 +74,13 @@ namespace WalletBusiness.Tests
             };
         }
 
-        public static IEnumerable<object[]> Data_for_Money_withdrawal_updates_balance_correctly()
+        public static IEnumerable<object[]> MembersData_for_Debit()
         {
             yield return new object[]
             {
+                50m,
                 new BalanceDetailsModel
                 {
-                    Total = 100.20m,
                     Pounds = 100,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -94,7 +91,6 @@ namespace WalletBusiness.Tests
                 },
                 new BalanceDetailsModel
                 {
-                    Total = 50.20m,
                     Pounds = 50,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -105,7 +101,6 @@ namespace WalletBusiness.Tests
                 },
                 new BalanceDetailsModel
                 {
-                    Total = 50m,
                     Pounds = 50,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -117,9 +112,9 @@ namespace WalletBusiness.Tests
             };
             yield return new object[]
             {
+                40.20m,
                 new BalanceDetailsModel
                 {
-                    Total = 100.20m,
                     Pounds = 100,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -130,7 +125,6 @@ namespace WalletBusiness.Tests
                 },
                 new BalanceDetailsModel
                 {
-                    Total = 60m,
                     Pounds = 60,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -141,7 +135,6 @@ namespace WalletBusiness.Tests
                 },
                 new BalanceDetailsModel
                 {
-                    Total = 40.20m,
                     Pounds = 40,
                     OnePenny = 0,
                     TwoPence = 0,
@@ -153,8 +146,39 @@ namespace WalletBusiness.Tests
             };
         }
 
+        public static IEnumerable<object[]> MembersData_for_Credit()
+        {
+            yield return new object[]
+            {
+                0m,
+                new Message<String, WalletOperation>
+                {
+                    Key = "1",
+                    Value = new WalletOperation(OperationType.Credit, 0m)
+                }
+            };
+            yield return new object[]
+            {
+                10.30m,
+                new Message<String, WalletOperation>
+                {
+                    Key = "1",
+                    Value = new WalletOperation(OperationType.Credit, 10.30m)
+                }
+            };
+            yield return new object[]
+            {
+                0.01m,
+                new Message<String, WalletOperation>
+                {
+                    Key = "1",
+                    Value = new WalletOperation(OperationType.Credit, 0.01m)
+                }
+            };
+        }
+
         [Theory]
-        [MemberData(nameof(Data_for_Balance_is_returned))]
+        [MemberData(nameof(MembersData_for_Balance))]
         public async void Balance_is_returned(BalanceDetailsModel balance)
         {
             redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(balance);
@@ -164,13 +188,45 @@ namespace WalletBusiness.Tests
         }
 
         [Theory]
-        [MemberData(nameof(Data_for_Money_withdrawal_updates_balance_correctly))]
+        [MemberData(nameof(MembersData_for_Credit))]
+        public async void Adding_money_sends_message_to_operations_topic(
+            decimal amount,
+            Message<String, WalletOperation> message)
+        {
+            string topic = "WalletOperations";
+
+            producer.Setup(s => s.ProduceAsync(topic, message, default)).
+                ReturnsAsync(new DeliveryResult<String, WalletOperation>());
+            producer.Setup(s => s.Flush((CancellationToken)default));
+
+            var result = await sut.AddMoney(amount);
+            Assert.True(result);
+            producer.Verify(s => s.ProduceAsync(topic,
+                It.IsAny<Message<String, WalletOperation>>(), default), Times.Exactly(1));
+            producer.Verify(s => s.Flush((CancellationToken)default), Times.Exactly(1));
+        }
+
+        [Fact]
+        public async void Adding_money_returns_false_when_exception()
+        {
+            string topic = "WalletOperations";
+
+            producer.Setup(s => s.ProduceAsync(topic, It.IsAny<Message<String, WalletOperation>>(), default))
+                .ThrowsAsync(new Exception("Random"));
+
+            var result = await sut.AddMoney(10.30m);
+            Assert.False(result);
+        }
+
+        [Theory]
+        [MemberData(nameof(MembersData_for_Debit))]
         public async void Money_withdrawal_updates_balance_correctly(
-            BalanceDetailsModel initialBalance, BalanceDetailsModel newBalance, BalanceDetailsModel withdrawn)
+            decimal amount, BalanceDetailsModel initialBalance,
+            BalanceDetailsModel newBalance, BalanceDetailsModel withdrawn)
         {
             redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(initialBalance);
 
-            var result = await sut.WithdrawMoney(withdrawn.Total);
+            var result = await sut.WithdrawMoney(amount);
             Assert.Equal(withdrawn, result);
             redis.Verify(s => s.SetWalletBalance(newBalance), Times.Exactly(1));
         }

@@ -1,6 +1,6 @@
 ﻿namespace WalletDomain;
 
-public class WalletOperation
+public record WalletOperation
 {
     public OperationType OperationType { get; }
 

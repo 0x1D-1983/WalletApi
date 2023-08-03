@@ -162,16 +162,6 @@ public static class CoinsHelper
                 { 1, 0 }
             };
 
-    public static BalanceDetailsModel ToBalanceDetailsModel(this decimal amount)
-    {
-        DecimalValue credit = new DecimalValue(amount);
-
-        var coins = GetCoinsThatAddUpAmountInf(Denominations, credit.Nanos);
-        var quantities = CoinListToQuantityDictionary(coins);
-
-        return new BalanceDetailsModel(amount, credit.Units, quantities);
-    }
-
     public static Dictionary<int, int> ToQuantityDictionary(this BalanceDetailsModel balanceDetails)
     {
         var result = InitQuantityDictionary();

@@ -2,6 +2,7 @@ bin/
 obj/
 .vscode/
 .vs/
+TestResults/
 AppCoverageReport/
 dotCover.Output/
 AppCoverageReport.html
