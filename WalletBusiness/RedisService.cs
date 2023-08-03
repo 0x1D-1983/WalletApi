@@ -9,15 +9,14 @@ public class RedisService : IRedisService
     private readonly IDatabase db;
     private const string WALLET = "wallet";
     
-    public RedisService(string host)
+    public RedisService(IDatabase db)
     {
-        var redisConnMultiplex = ConnectionMultiplexer.Connect(host);
-        db = redisConnMultiplex.GetDatabase();
+        this.db = db;
     }
 
-    public async Task SetWalletBalance(BalanceDetailsModel balance)
+    public async Task<bool> SetWalletBalance(BalanceDetailsModel balance)
     {
-        await db.StringSetAsync(WALLET, JsonSerializer.Serialize(balance));
+        return await db.StringSetAsync(WALLET, JsonSerializer.Serialize(balance));
     }
 
     public async Task<BalanceDetailsModel> GetWalletBalance()

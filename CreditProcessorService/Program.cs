@@ -16,6 +16,8 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, ser
     services.Configure<ProducerConfig>(hostContext.Configuration.GetSection("Producer"));
     services.Configure<ConsumerConfig>(hostContext.Configuration.GetSection("Consumer"));
 
+    services.AddSingleton<IRedisService, RedisService>();
+
     // schema registry
     services.AddSingleton<ISchemaRegistryClient>(sp =>
     {
@@ -46,9 +48,13 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, ser
     });
 
     // redis
-    services.AddSingleton<IRedisService>(sp =>
-        new RedisService(hostContext.Configuration["Redis:Host"] ??
-        throw new ArgumentNullException("Redis host is missing.")));
+    services.AddSingleton<IDatabase>(sp =>
+    {
+        var redisConnMultiplex = ConnectionMultiplexer.Connect(
+            hostContext.Configuration["Redis:Host"] ??
+            throw new ArgumentNullException("Redis host is missing."));
+        return redisConnMultiplex.GetDatabase();
+    });
 
     // redlock
     services.AddSingleton<IDistributedLockFactory>(sp =>

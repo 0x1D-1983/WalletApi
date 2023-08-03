@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using RedLockNet;
 using RedLockNet.SERedis;
@@ -12,10 +13,8 @@ using WalletDomain;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSingleton<IRedisService, RedisService>();
 builder.Services.AddSingleton<IWalletService, WalletService>();
-builder.Services.AddSingleton<IRedisService>(sp =>
-    new RedisService(builder.Configuration["Redis:Host"] ??
-    throw new ArgumentNullException("Redis host is missing.")));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -42,9 +41,13 @@ builder.Services.AddSingleton<ISchemaRegistryClient>(sp =>
 });
 
 // redis
-builder.Services.AddSingleton<IRedisService>(sp =>
-    new RedisService(builder.Configuration["Redis:Host"] ??
-    throw new ArgumentNullException("Redis host is missing.")));
+builder.Services.AddSingleton<IDatabase>(sp =>
+{
+    var redisConnMultiplex = ConnectionMultiplexer.Connect(
+        builder.Configuration["Redis:Host"] ??
+        throw new ArgumentNullException("Redis host is missing."));
+    return redisConnMultiplex.GetDatabase();
+});
 
 // redlock
 builder.Services.AddSingleton<IDistributedLockFactory>(sp =>
