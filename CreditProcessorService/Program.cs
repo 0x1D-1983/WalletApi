@@ -13,7 +13,6 @@ using WalletDomain;
 IHost host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
 {
     services.Configure<SchemaRegistryConfig>(hostContext.Configuration.GetSection("SchemaRegistry"));
-    services.Configure<ProducerConfig>(hostContext.Configuration.GetSection("Producer"));
     services.Configure<ConsumerConfig>(hostContext.Configuration.GetSection("Consumer"));
 
     services.AddSingleton<IRedisService, RedisService>();
@@ -23,18 +22,6 @@ IHost host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, ser
     {
         var regConfig = sp.GetRequiredService<IOptions<SchemaRegistryConfig>>();
         return new CachedSchemaRegistryClient(regConfig.Value);
-    });
-
-    // producer
-    services.AddSingleton<IProducer<String, BalanceDetailsModel>>(sp =>
-    {
-        var config = sp.GetRequiredService<IOptions<ProducerConfig>>();
-
-        var schemaRegistry = sp.GetRequiredService<ISchemaRegistryClient>();
-
-        return new ProducerBuilder<String, BalanceDetailsModel>(config.Value)
-            .SetValueSerializer(new JsonSerializer<BalanceDetailsModel>(schemaRegistry))
-            .Build();
     });
 
     // consumer

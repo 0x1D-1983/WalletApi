@@ -5,14 +5,13 @@ using WalletDomain;
 
 public class CreditWalletWorker : BackgroundService
 {
-    private const string _operationTopic = "WalletOperations";
+    private const string TOPIC = "WalletOperations";
+    private const string WALLET = "wallet";
 
     private readonly ILogger<CreditWalletWorker> logger;
     private readonly IConsumer<String, WalletOperation> consumer;
     private readonly IRedisService redisService;
     private readonly IDistributedLockFactory redLockFactory;
-
-    private const string WALLET = "wallet";
 
     public CreditWalletWorker(
         ILogger<CreditWalletWorker> logger,
@@ -57,7 +56,7 @@ public class CreditWalletWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken token)
     {
-        consumer.Subscribe(_operationTopic);
+        consumer.Subscribe(TOPIC);
 
         while (!token.IsCancellationRequested)
         {
