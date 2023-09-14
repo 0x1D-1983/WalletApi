@@ -1,5 +1,4 @@
-﻿using System;
-using RedLockNet;
+﻿using RedLockNet;
 
 namespace WalletBusiness.Tests;
 
@@ -7,12 +6,11 @@ public class MockRedlock : IRedLock
 {
     public void Dispose()
     {
-
     }
 
     public ValueTask DisposeAsync()
     {
-        throw new NotImplementedException();
+        return default;
     }
 
     public string Resource { get; }
@@ -22,4 +20,3 @@ public class MockRedlock : IRedLock
     public RedLockInstanceSummary InstanceSummary => new RedLockInstanceSummary();
     public int ExtendCount { get; }
 }
-

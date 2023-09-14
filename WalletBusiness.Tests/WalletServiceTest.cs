@@ -1,34 +1,33 @@
 ﻿using System;
+using System.Text.Json;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RedLockNet;
+using StackExchange.Redis;
 using WalletDomain;
 
 namespace WalletBusiness.Tests
 {
-	public class WalletServiceTest
-	{
+    public class WalletServiceTest
+    {
         private readonly Mock<ILogger<WalletService>> logger;
-        private readonly Mock<IProducer<String, WalletOperation>> producer;
-        private readonly Mock<IRedisService> redis;
         private readonly Mock<IDistributedLockFactory> redLockFactory;
+        private readonly Mock<IDatabase> db;
 
         private readonly WalletService sut;
+
+        private const string WALLET = "wallet";
 
         public WalletServiceTest()
         {
             logger = new Mock<ILogger<WalletService>>();
-            producer = new Mock<IProducer<string, WalletOperation>>();
-            redis = new Mock<IRedisService>();
             redLockFactory = new Mock<IDistributedLockFactory>();
+            db = new Mock<IDatabase>();
 
-            redLockFactory.Setup(x => x.CreateLockAsync(It.IsAny<string>(),
-                It.IsAny<TimeSpan>(), It.IsAny<TimeSpan>(),
-                It.IsAny<TimeSpan>(), It.IsAny<CancellationToken?>()))
-            .ReturnsAsync(new MockRedlock());
+            redLockFactory.Setup(x => x.CreateLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>())).ReturnsAsync(new MockRedlock());
 
-            sut = new WalletService(logger.Object, producer.Object, redis.Object, redLockFactory.Object);
+            sut = new WalletService(logger.Object, redLockFactory.Object, db.Object);
         }
 
         public static IEnumerable<object[]> MembersData_for_Balance()
@@ -319,41 +318,12 @@ namespace WalletBusiness.Tests
         [MemberData(nameof(MembersData_for_Balance))]
         public async void Balance_is_returned(BalanceDetailsModel balance)
         {
-            redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(balance);
+            string json = JsonSerializer.Serialize(balance);
+            db.Setup(s => s.StringGetAsync(WALLET, CommandFlags.None)).ReturnsAsync(new RedisValue(json));
 
             var result = await sut.GetBalance();
             Assert.Equal(balance, result);
-        }
-
-        [Theory]
-        [MemberData(nameof(MembersData_for_Credit))]
-        public async void Adding_money_sends_message_to_operations_topic(
-            decimal amount,
-            Message<String, WalletOperation> message)
-        {
-            string topic = "WalletOperations";
-
-            producer.Setup(s => s.ProduceAsync(topic, message, default)).
-                ReturnsAsync(new DeliveryResult<String, WalletOperation>());
-            producer.Setup(s => s.Flush((CancellationToken)default));
-
-            var result = await sut.AddMoney(amount);
-            Assert.True(result);
-            producer.Verify(s => s.ProduceAsync(topic,
-                It.IsAny<Message<String, WalletOperation>>(), default), Times.Exactly(1));
-            producer.Verify(s => s.Flush((CancellationToken)default), Times.Exactly(1));
-        }
-
-        [Fact]
-        public async void Adding_money_returns_false_when_exception()
-        {
-            string topic = "WalletOperations";
-
-            producer.Setup(s => s.ProduceAsync(topic, It.IsAny<Message<String, WalletOperation>>(), default))
-                .ThrowsAsync(new Exception("Random"));
-
-            var result = await sut.AddMoney(10.30m);
-            Assert.False(result);
+            db.Verify(s => s.StringGetAsync(WALLET, CommandFlags.None), Times.Exactly(1));
         }
 
         [Theory]
@@ -362,11 +332,14 @@ namespace WalletBusiness.Tests
             decimal amount, BalanceDetailsModel initialBalance,
             BalanceDetailsModel newBalance, BalanceDetailsModel withdrawn)
         {
-            redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(initialBalance);
+            string initialBalanceJson = JsonSerializer.Serialize(initialBalance);
+            db.Setup(s => s.StringGetAsync(WALLET, CommandFlags.None)).ReturnsAsync(new RedisValue(initialBalanceJson));
 
             var result = await sut.WithdrawMoney(amount);
             Assert.Equal(withdrawn, result);
-            redis.Verify(s => s.SetWalletBalance(newBalance), Times.Exactly(1));
+
+            string newBalanceJson = JsonSerializer.Serialize(newBalance);
+            db.Verify(s => s.StringSetAsync(WALLET, newBalanceJson, null, false, When.Always, CommandFlags.None), Times.Exactly(1));
         }
 
         [Theory]
@@ -375,11 +348,14 @@ namespace WalletBusiness.Tests
             decimal amount, BalanceDetailsModel initialBalance,
             BalanceDetailsModel newBalance, BalanceDetailsModel withdrawn)
         {
-            redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(initialBalance);
+            string initialBalanceJson = JsonSerializer.Serialize(initialBalance);
+            db.Setup(s => s.StringGetAsync(WALLET, CommandFlags.None)).ReturnsAsync(new RedisValue(initialBalanceJson));
 
             var result = await sut.WithdrawMoney(amount);
             Assert.Equal(withdrawn, result);
-            redis.Verify(s => s.SetWalletBalance(newBalance), Times.Exactly(1));
+
+            string json2 = JsonSerializer.Serialize(newBalance);
+            db.Verify(s => s.StringSetAsync(WALLET, json2, null, false, When.Always, CommandFlags.None), Times.Exactly(1));
         }
 
         [Theory]
@@ -387,7 +363,8 @@ namespace WalletBusiness.Tests
         public async void Withdrawal_throws_exception_when_pounds_unavailable(
             decimal amount, BalanceDetailsModel initialBalance)
         {
-            redis.Setup(s => s.GetWalletBalance()).ReturnsAsync(initialBalance);
+            string initialBalanceJson = JsonSerializer.Serialize(initialBalance);
+            db.Setup(s => s.StringGetAsync(WALLET, CommandFlags.None)).ReturnsAsync(new RedisValue(initialBalanceJson));
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => sut.WithdrawMoney(amount));
         }
